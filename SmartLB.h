@@ -4,19 +4,19 @@
 
 /*@{*/
 
-#ifndef _FIRSTLB_H_
-#define _FIRSTLB_H_
+#ifndef _SMARTLB_H_
+#define _SMARTLB_H_
 
 #include "CentralLB.h"
-#include "FirstLB.decl.h"
+#include "SmartLB.decl.h"
 
-void CreateFirstLB();
+void CreateSmartLB();
 
-class FirstLB : public CentralLB {
+class SmartLB : public CentralLB {
   public:
-    FirstLB(const CkLBOptions &opt);
-    FirstLB(CkMigrateMessage *m) : CentralLB (m) { };
-    void procuraProc(LDStats *stats, double *pe_loads, int highestProcessor, int lessProcessor);
+    SmartLB(const CkLBOptions &opt);
+    SmartLB(CkMigrateMessage *m) : CentralLB (m) { };
+    void procuraProc(LDStats *stats, double *pe_loads, int highestProcessor, int lessProcessor, int n_pes);
     //int * getMoreAndLessThanAverage(int npes, double *pe_loads);
     void work(LDStats *stats);
     void pup(PUP::er &p) { CentralLB::pup(p); }

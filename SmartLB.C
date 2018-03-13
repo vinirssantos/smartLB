@@ -5,21 +5,21 @@
 
 /*@{*/
 
-#include "FirstLB.h"
+#include "SmartLB.h"
 #include "ckgraph.h"
 #include "stdio.h"
 
 double aux = 0.0;
 
-CreateLBFunc_Def(FirstLB, "My first load balancer")
+CreateLBFunc_Def(SmartLB, "My first load balancer")
 
-FirstLB::FirstLB(const CkLBOptions &opt) : CentralLB(opt) {
-  lbname = "FirstLB";
+SmartLB::SmartLB(const CkLBOptions &opt) : CentralLB(opt) {
+  lbname = "SmartLB";
   if(CkMyPe() == 0)
-    CkPrintf("FirstLB created on processor %d\n",CkMyPe());
+    CkPrintf("SmartLB created on processor %d\n",CkMyPe());
 }
 
-CmiBool FirstLB::QueryBalanceNow(int _step) {
+CmiBool SmartLB::QueryBalanceNow(int _step) {
   return CmiTrue;
 }
 
@@ -42,7 +42,7 @@ int * getMoreAndLessThanAverage(int npes, double *pe_loads) {
 
 int nmoves=0, taskCount=0, migrationCount=0;
 
-void FirstLB::procuraProc(LDStats *stats, double *pe_loads, int highestProcessor, int lessProcessor) {
+void SmartLB::procuraProc(LDStats *stats, double *pe_loads, int highestProcessor, int lessProcessor, int n_pes) {
 	double walltime, diference, wallDiff;
 
 	/*
@@ -64,9 +64,9 @@ void FirstLB::procuraProc(LDStats *stats, double *pe_loads, int highestProcessor
 				diference = pe_loads[highestProcessor]-pe_loads[lessProcessor];
 				taskCount++;
 
-				if(taskCount >= 5 and taskCount <= 8 and migrationCount < 1) {
+				if(taskCount >= (n_pes*0.95) and taskCount <= (n_pes*0.90) and migrationCount < 1) {
 					wallDiff = (diference*0.15);
-				} else if(taskCount > 8 and migrationCount < 2) {
+				} else if(taskCount > (n_pes*0.90) and migrationCount < (n_pes*0.98)) {
 					wallDiff = (diference*0.30);
 				} else {
 					wallDiff = (diference*0.5);
@@ -85,7 +85,7 @@ void FirstLB::procuraProc(LDStats *stats, double *pe_loads, int highestProcessor
 	}
 }
 
-void FirstLB::work(LDStats *stats) {
+void SmartLB::work(LDStats *stats) {
 	/** ========================== INITIALIZATION ============================= */
 	int n_pes = stats->nprocs(); //n_pes = numero de processadores, nmoves = numero de migrações
 	double pe_loads[n_pes]; //carga total de cada Pe
@@ -93,7 +93,7 @@ void FirstLB::work(LDStats *stats) {
 	for (int i=0; i<n_pes; i++) {
 		pe_loads[i] = 0;
 	}
-	
+
 	for(int i = 0; i < stats->n_objs; i++) {
 		LDObjData &oData = stats->objData[i];
 		pe_loads[stats->from_proc[i]] += oData.wallTime; //calcula a carga total de cada Pe
@@ -106,8 +106,8 @@ void FirstLB::work(LDStats *stats) {
 	int lessProcessor = highestLessProcessor[0]; // pega processador com a menor carga
 	taskCount=0;
 	migrationCount=0;
-	
-	procuraProc(stats, pe_loads, highestProcessor, lessProcessor);
+
+	procuraProc(stats, pe_loads, highestProcessor, lessProcessor, n_pes);
 
 	//verifica novamente qual é o core com maior e menor carga
 	highestLessProcessor = getMoreAndLessThanAverage(stats->nprocs(), pe_loads);
@@ -118,5 +118,5 @@ void FirstLB::work(LDStats *stats) {
 	CkPrintf("menor[%d] = %f\n", lessProcessor, pe_loads[lessProcessor]);
 	/** ============================== CLEANUP ================================ */
 }
-#include "FirstLB.def.h"
+#include "SmartLB.def.h"
 /*@}*/
